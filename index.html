@@ -64,7 +64,13 @@
             max-width: 100%;
             height: auto;
         }
-        .qa-section, .image-tuple-section {
+        .qa-section {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .image-tuple-section {
             margin-top: 10px;
             padding: 10px;
             background-color: #f8f9fa;
@@ -74,6 +80,13 @@
             text-align: center;
             font-size: 18px;
             padding: 20px;
+        }
+        #matches {
+            font-family: monospace;
+            font-size:14px;
+        }
+        .qa {
+            margin: 5px;
         }
     </style>
 </head>
@@ -103,19 +116,7 @@
                 <a href="#code">Code</a>
             </nav>
         </div> 
-        <!-- <div class="row mt-4">
-            <div class="col-md-3 offset-md-4">
-                <select id="model-select" class="form-select">
-                    <option value="gpt-4o">GPT-4o</option>
-                    <option value="claude3.5-sonnet">Claude 3.5 Sonnet</option>
-                    <option value="blip3">BLIP3</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                    <option value="llava">LLaVA</option>
-                    <option value="llava-next">LLaVA Next</option>
-                    <option value="internvl8b">InternVL8B</option>
-                </select>
-            </div>
-        </div> -->
+
     </div>
     <div class="container mt-4">
         <!-- Dataset Grid -->
@@ -144,6 +145,10 @@
             dataset = dataset.sort(() => Math.random() - 0.5);
             loadMoreItems();
         }
+        function escapeHTML(str) {
+            return str;
+        }
+            
 
         // Function to load more items into the grid
         function loadMoreItems() {
@@ -157,13 +162,19 @@
                 const prefix = 'https://media.githubusercontent.com/media/virajprabhu/prove-explorer/refs/heads/main';
                 const sceneGraph = `${prefix}/sg/${lastWord}.png`;
                 const qaSection = item.qa.map(qaItem => `
-                    <div>
+                    <div class="qa">
                         <strong>Q: ${qaItem.question}</strong><br>
                         <strong>A:</strong> ${qaItem.answer}<br>
                         ${qaItem.code}<br>
-                        <strong>${currentModel}:</strong> ${qaItem[currentModel].response || 'N/A'}
-                        [<strong><font color="red">hscore:</font></strong> ${Math.round(qaItem[currentModel].hscore*100)/100 || 'N/A'}, 
-                        <strong><font color="blue">tscore:</font></strong> ${Math.round(qaItem[currentModel].tscore*100)/100 || 'N/A'}]
+                        <strong>${currentModel}:</strong> ${qaItem[currentModel].response || 'N/A'}<br/>
+                        <strong><font color="red">hscore: ${Math.round(qaItem[currentModel].hscore*100)/100 || 'N/A'} </font></strong><br/>
+                        <div id="matches">
+                        ${escapeHTML(qaItem[currentModel].hmatch.toString())}<br/>
+                        </div>
+                        <strong><font color="blue">tscore: ${Math.round(qaItem[currentModel].tscore*100)/100 || 'N/A'}</font></strong><br/>
+                        <div id="matches">                                                    
+                            ${escapeHTML(qaItem[currentModel].tmatch.toString())}<br/>
+                        </div>
                     </div>
                 `).join('<hr>');
 
@@ -178,12 +189,12 @@
                                 <p class="card-text">${item.caption}</p>
 
                                 <div class="image-tuple-section">
-                                    <h6>Scene Graph</h6>
+                                    <h5 class="card-title">Scene Graph</h5>
                                     <ul><img src="${sceneGraph}" class="card-img-top" alt="Scene Graph"></ul>
                                 </div>
 
                                 <div class="qa-section">
-                                    <h6>QA Section</h6>
+                                    <h5 class="card-title">QA + verification programs</h5>
                                     ${qaSection}
                                 </div>
                             </div>
@@ -230,5 +241,6 @@
         // Add event listener for model selection
         document.getElementById('model-select').addEventListener('change', handleModelSelection);
     </script>
+
 </body>
 </html>
