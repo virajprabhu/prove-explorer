@@ -5,7 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programmatic VLM Evaluation (PROVE)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
     <style>
+        /* Styles for the help icon */
+        .help-icon {
+            font-size: 24px;
+            color: #ffffff;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .help-icon:hover {
+            color: #ffffff;
+        }
         #header {
             position: fixed;
             top: 0;
@@ -88,6 +101,48 @@
         .qa {
             margin: 5px;
         }
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Background with opacity */
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Modal content box */
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            color: black;
+            font-size: 16px;
+            font-family: ITC Avant Garde Std Demi,Salesforce Sans,system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,Liberation Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
+            text-wrap: wrap;
+            border-radius: 8px;
+            width: 75%;
+            max-width: 600px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: left;
+        }
+
+        /* Close button */
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -97,8 +152,22 @@
             <div class="logo">
                 <img src="https://a.sfdcstatic.com/shared/images/c360-nav/salesforce-with-type-logo.svg" alt="Logo" />
             </div>
-            Programmatic VLM Evaluation (PROVE) Explorer
-            <div class="col-md-1">
+            <div class="col-md-2">
+                <span>Programmatic VLM Evaluation (PROVE) Explorer</span>
+                <i class="fas fa-question-circle help-icon" onclick="openModal()"></i>  <!-- Help icon using Font Awesome -->
+                
+                <!-- Modal Structure -->
+                <div id="helpModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close-btn" onclick="closeModal()">&times;</span>  <!-- Close Button -->
+                        <h3 style="text-align: center;"><strong>About</strong></h3>
+                            <p>This webpage visualizes a subset of the Programmatic VLM Evaluation (PROVE) dataset. For each image-caption pair from the DOCCI test set, we construct and display a programmatically queryable scene graph representation. We also display the set of LLM-generated visual question answer pairs and verification  programs that we run to validate the correctness of the generated answer.</p>
+                            <p>
+                            In addition, we display evaluation results for free-form responses from various VLMs (selected from the drop-down) -- we show response helpfulness (hscore) and truthfulness (tscore), and their corresponding sets of tuple matches and match scores.</p>
+                    </div>
+                </div>
+            </div>            
+            <div class="col-md-1 offset-md-1">
                 <select id="model-select" class="form-select">
                     <option value="gpt-4o">GPT-4o</option>
                     <option value="claude3.5-sonnet">Claude 3.5 Sonnet</option>
@@ -118,10 +187,10 @@
         </div> 
 
     </div>
-    <div class="container mt-4">
+    <div class="container mt-8">
         <!-- Dataset Grid -->
+        <!-- Items will be dynamically inserted here -->
         <div id="dataset-grid" class="row row-cols-1 row-cols-md-2 g-4">
-            <!-- Items will be dynamically inserted here -->
         </div>
     </div>
     <div class="text-center mt-4">
@@ -147,9 +216,25 @@
         }
         function escapeHTML(str) {
             return str;
-        }
-            
+        }            
 
+        // Function to display an alert with help details
+        function openModal() {
+        document.getElementById('helpModal').style.display = 'flex';
+    }
+
+        // Close the modal
+        function closeModal() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        // Close the modal when clicking outside of the modal content
+        window.onclick = function(event) {
+            const modal = document.getElementById('helpModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
         // Function to load more items into the grid
         function loadMoreItems() {
             const grid = document.getElementById('dataset-grid');
@@ -167,11 +252,11 @@
                         <strong>A:</strong> ${qaItem.answer}<br>
                         ${qaItem.code}<br>
                         <strong>${currentModel}:</strong> ${qaItem[currentModel].response || 'N/A'}<br/>
-                        <strong><font color="red">hscore: ${Math.round(qaItem[currentModel].hscore*100)/100 || 'N/A'} </font></strong><br/>
+                        <strong><font color="red">hscore: ${Math.round(qaItem[currentModel].hscore*100)/100 || 'N/A'}% </font></strong><br/>
                         <div id="matches">
                         ${escapeHTML(qaItem[currentModel].hmatch.toString())}<br/>
                         </div>
-                        <strong><font color="blue">tscore: ${Math.round(qaItem[currentModel].tscore*100)/100 || 'N/A'}</font></strong><br/>
+                        <strong><font color="blue">tscore: ${Math.round(qaItem[currentModel].tscore*100)/100 || 'N/A'}%</font></strong><br/>
                         <div id="matches">                                                    
                             ${escapeHTML(qaItem[currentModel].tmatch.toString())}<br/>
                         </div>
