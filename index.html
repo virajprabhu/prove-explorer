@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programmatic VLM Evaluation (PROVE)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            margin: 0;
+            width: 100%;
+            padding: 1px 0 0 0;
+            background-color: white;  /* Set background so content doesn’t show through */
+            z-index: 1000;  /* Ensures it stays on top of other content */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  /* Optional: Add a shadow for emphasis */
+        }
+        .banner {
+            background-color: rgb(3, 45, 96); /* Primary color for the banner */
+            padding: 10px 20px;
+            font-family: ITC Avant Garde Std Demi,Salesforce Sans,system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,Liberation Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
+            font-size: 28px;
+            line-height: 32px;
+            font-synthesis: style small-caps;
+            margin-bottom: 0px;
+            white-space: nowrap;
+            color: white;
+        }
+        #load-more-btn {
+            background-color: rgb(3, 45, 96); /* Primary color for the banner */
+            padding: 10px 20px;
+            font-family: ITC Avant Garde Std Demi,Salesforce Sans,system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,Liberation Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
+            font-size: 20px;
+            line-height: 32px;
+            font-synthesis: style small-caps;
+            margin-bottom: 0px;
+            white-space: nowrap;
+            color: white;
+
+        }
+        .logo img {
+            height: 50px; /* Adjust based on the logo size */
+        }
+
+        /* Style for navigation links */
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        body {
+            padding-top: 120px;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+        }
+        .qa-section, .image-tuple-section {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        .loading {
+            text-align: center;
+            font-size: 18px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <div class="banner d-flex justify-content-between align-items-center">
+            <!-- Logo -->
+            <div class="logo">
+                <img src="https://a.sfdcstatic.com/shared/images/c360-nav/salesforce-with-type-logo.svg" alt="Logo" />
+            </div>
+            Programmatic VLM Evaluation (PROVE) Explorer
+            <div class="col-md-1">
+                <select id="model-select" class="form-select">
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="claude3.5-sonnet">Claude 3.5 Sonnet</option>
+                    <option value="blip3">BLIP3</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="llava">LLaVA</option>
+                    <option value="llava-next">LLaVA Next</option>
+                    <option value="internvl8b">InternVL8B</option>
+                </select>
+            </div>
+            <!-- Navigation Links -->
+            <nav class="nav-links">
+                <a href="#paper">Paper</a>
+                <a href="#data">Data</a>
+                <a href="#code">Code</a>
+            </nav>
+        </div> 
+        <!-- <div class="row mt-4">
+            <div class="col-md-3 offset-md-4">
+                <select id="model-select" class="form-select">
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="claude3.5-sonnet">Claude 3.5 Sonnet</option>
+                    <option value="blip3">BLIP3</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="llava">LLaVA</option>
+                    <option value="llava-next">LLaVA Next</option>
+                    <option value="internvl8b">InternVL8B</option>
+                </select>
+            </div>
+        </div> -->
+    </div>
+    <div class="container mt-4">
+        <!-- Dataset Grid -->
+        <div id="dataset-grid" class="row row-cols-1 row-cols-md-2 g-4">
+            <!-- Items will be dynamically inserted here -->
+        </div>
+    </div>
+    <div class="text-center mt-4">
+        <button id="load-more-btn" class="btn btn-primary">Load More</button>
+    </div>
+
+    <!-- Bootstrap and JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const ITEMS_PER_BATCH = 10;  // How many items to load per batch
+        let dataset = [];  // Full dataset
+        let loadedItems = 0;  // Track how many items have been loaded so far
+        let currentModel = 'gpt-4o';  // Default model
+        let observer;  // IntersectionObserver for lazy loading
+
+        // Fetch the JSON dataset lazily
+        async function loadDataset() {
+            const response = await fetch('data.json');
+            dataset = await response.json();
+            // randomize order
+            dataset = dataset.sort(() => Math.random() - 0.5);
+            loadMoreItems();
+        }
+
+        // Function to load more items into the grid
+        function loadMoreItems() {
+            const grid = document.getElementById('dataset-grid');
+
+            // Load the next batch of items
+            const nextItems = dataset.slice(loadedItems, loadedItems + ITEMS_PER_BATCH);
+            nextItems.forEach(item => {
+                const imageTuples = item.image_tuples.map(tuple => `<li>${tuple}</li>`).join('');
+                const lastWord = item.image.split('/')[item.image.split('/').length - 1].split('.')[0];
+                const sceneGraph = `sg/${lastWord}.png`;
+                const qaSection = item.qa.map(qaItem => `
+                    <div>
+                        <strong>Q: ${qaItem.question}</strong><br>
+                        <strong>A:</strong> ${qaItem.answer}<br>
+                        ${qaItem.code}<br>
+                        <strong>${currentModel}:</strong> ${qaItem[currentModel].response || 'N/A'}
+                        [<strong><font color="red">hscore:</font></strong> ${Math.round(qaItem[currentModel].hscore*100)/100 || 'N/A'}, 
+                        <strong><font color="blue">tscore:</font></strong> ${Math.round(qaItem[currentModel].tscore*100)/100 || 'N/A'}]
+                    </div>
+                `).join('<hr>');
+
+                const card = `
+                    <div class="col">
+                        <div class="card">
+                            <div class="image-container">
+                                <img src="${item.image}" class="card-img-top" alt="Image">
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">Caption</h5>
+                                <p class="card-text">${item.caption}</p>
+
+                                <div class="image-tuple-section">
+                                    <h6>Scene Graph</h6>
+                                    <ul><img src="${sceneGraph}" class="card-img-top" alt="Scene Graph"></ul>
+                                </div>
+
+                                <div class="qa-section">
+                                    <h6>QA Section</h6>
+                                    ${qaSection}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                grid.innerHTML += card;
+            });
+
+            // Update how many items have been loaded
+            loadedItems += nextItems.length;
+
+            // If all items have been loaded, stop observing
+            if (loadedItems >= dataset.length) {
+                document.getElementById('load-more-btn').style.display = 'none';  // Hide the "Load More" button
+            }
+        }
+
+        // Initialize lazy loading with IntersectionObserver
+        function setupLazyLoading() {
+            const loadingElement = document.getElementById('loading');
+            observer = new IntersectionObserver((entries) => {
+                const entry = entries[0];
+                if (entry.isIntersecting) {
+                    loadMoreItems();
+                }
+            });
+
+            observer.observe(loadingElement);  // Observe the loading element
+        }
+
+        // Function to handle model selection
+        function handleModelSelection(event) {
+            currentModel = event.target.value;  // Update the current model
+            loadedItems = 0;  // Reset loaded items
+            document.getElementById('dataset-grid').innerHTML = '';  // Clear existing items
+            loadMoreItems();  // Reload the grid with the selected model
+        }
+
+        // Start the process by loading the dataset
+        loadDataset();
+        document.getElementById('load-more-btn').addEventListener('click', loadMoreItems);
+
+
+        // Add event listener for model selection
+        document.getElementById('model-select').addEventListener('change', handleModelSelection);
+    </script>
+</body>
+</html>
