@@ -154,7 +154,8 @@
             nextItems.forEach(item => {
                 const imageTuples = item.image_tuples.map(tuple => `<li>${tuple}</li>`).join('');
                 const lastWord = item.image.split('/')[item.image.split('/').length - 1].split('.')[0];
-                const sceneGraph = `sg/${lastWord}.png`;
+                const prefix = 'https://media.githubusercontent.com/media/virajprabhu/prove-explorer/refs/heads/main';
+                const sceneGraph = `${prefix}/sg/${lastWord}.png`;
                 const qaSection = item.qa.map(qaItem => `
                     <div>
                         <strong>Q: ${qaItem.question}</strong><br>
