@@ -151,9 +151,10 @@
             <!-- Logo -->
             <div class="logo">
                 <img src="https://a.sfdcstatic.com/shared/images/c360-nav/salesforce-with-type-logo.svg" alt="Logo" />
-            </div>
+            </div>  
+
             <div class="col-md-2">
-                <span>Programmatic VLM Evaluation (PROVE) Explorer</span>
+                <span>PROVE Explorer</span>
                 <i class="fas fa-question-circle help-icon" onclick="openModal()"></i>  <!-- Help icon using Font Awesome -->
                 
                 <!-- Modal Structure -->
@@ -166,18 +167,30 @@
                             In addition, we display evaluation results for free-form responses from various VLMs (selected from the drop-down) -- we show response helpfulness (hscore) and truthfulness (tscore), and their corresponding sets of tuple matches and match scores.</p>
                     </div>
                 </div>
-            </div>            
-            <div class="col-md-1 offset-md-1">
+            </div>    
+            <div class="col-md-0.5">
                 <select id="model-select" class="form-select">
                     <option value="gpt-4o">GPT-4o</option>
-                    <option value="claude3.5-sonnet">Claude 3.5 Sonnet</option>
-                    <option value="blip3">BLIP3</option>
+                    <!-- <option value="claude3.5-sonnet">Claude 3.5 Sonnet</option> -->
+                    <!-- <option value="blip3">BLIP3</option> -->
                     <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                    <option value="llava">LLaVA</option>
-                    <option value="llava-next">LLaVA Next</option>
-                    <option value="internvl8b">InternVL8B</option>
+                    <option value="llava">LLaVA-1.5 (7B)</option>
+                    <option value="llava-next">LLaVA Next (7B)</option>
+                    <option value="internvl8b">InternVL2 (8B)</option>
+                </select>                
+                </div>
+            <div class="col-md-0.5">
+                <select id="sort-order" class="form-select" onchange="sortMatches()">
+                    <option value="random">Random</option>
+                    <option value="descending">High &rarr; Low</option>
+                    <option value="ascending">Low &rarr; High</option>
                 </select>
             </div>
+
+            <!-- Sort Dropdown -->
+            <!-- <div class="col-md-1">
+
+            </div>       -->
             <!-- Navigation Links -->
             <nav class="nav-links">
                 <a href="#paper">Paper</a>
@@ -235,12 +248,41 @@
                 modal.style.display = 'none';
             }
         };
+
+        // Function to handle sorting by user selection
+        function sortMatches() {
+                sortOrder = document.getElementById('sort-order').value;  // Get the selected sort order
+                loadedItems = 0;  // Reset loaded items
+                document.getElementById('dataset-grid').innerHTML = '';  // Clear existing items
+                loadMoreItems();  // Reload the grid with the new sort order
+            }
+
+
         // Function to load more items into the grid
         function loadMoreItems() {
             const grid = document.getElementById('dataset-grid');
-
+            sortOrder = document.getElementById('sort-order').value;
+            // check if sort order is not random
+            
+            // Sort dataset based on the selected model's rank field and sortOrder
+            const sortedDataset = dataset.sort((a, b) => {
+                // console.log(a, b)
+                const rankA = a[`rank-${currentModel}`];  // Correctly construct the rank field based on currentModel
+                const rankB = b[`rank-${currentModel}`];
+                // console.log(rankA, rankB);
+                
+                // Sort in ascending or descending order
+                if (sortOrder === 'ascending') {
+                    return rankA - rankB;
+                } else if (sortOrder === 'descending') {
+                    return rankB - rankA;
+                } else { // Random order
+                    return Math.random() - 0.5;
+                }
+            });
             // Load the next batch of items
-            const nextItems = dataset.slice(loadedItems, loadedItems + ITEMS_PER_BATCH);
+            const nextItems = sortedDataset.slice(loadedItems, loadedItems + ITEMS_PER_BATCH);
+            
             nextItems.forEach(item => {
                 const imageTuples = item.image_tuples.map(tuple => `<li>${tuple}</li>`).join('');
                 const lastWord = item.image.split('/')[item.image.split('/').length - 1].split('.')[0];
@@ -318,13 +360,11 @@
             loadMoreItems();  // Reload the grid with the selected model
         }
 
-        // Start the process by loading the dataset
-        loadDataset();
         document.getElementById('load-more-btn').addEventListener('click', loadMoreItems);
-
 
         // Add event listener for model selection
         document.getElementById('model-select').addEventListener('change', handleModelSelection);
+        loadDataset();
     </script>
 
 </body>
