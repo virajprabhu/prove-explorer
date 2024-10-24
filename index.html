@@ -221,7 +221,7 @@
 
         // Fetch the JSON dataset lazily
         async function loadDataset() {
-            const response = await fetch('data.json');
+            const response = await fetch('data-dev.json');
             dataset = await response.json();
             // randomize order
             dataset = dataset.sort(() => Math.random() - 0.5);
